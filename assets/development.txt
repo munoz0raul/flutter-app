@@ -1,2 +1,0 @@
-assets/development.png
-assets/development1.png

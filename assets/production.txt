@@ -1,2 +1,0 @@
-assets/production.png
-assets/production1.png
