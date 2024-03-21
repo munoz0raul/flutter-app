@@ -6,6 +6,8 @@ import 'dart:io' as io;
 import 'package:path_provider/path_provider.dart';
 import 'package:process_run/shell_run.dart';
 
+import "package:yaml/yaml.dart";
+
 class Content {
   String FileName;
   List paths;
@@ -36,27 +38,26 @@ class MyAppScreen extends StatefulWidget {
 
 class MyAppScreenState extends State {
   List<Content> contents = [];
-// String dir1 = "/usr/share/flutter/app/3.16.7/release/data/flutter_assets/assets/";
-  String dir = "assets/";
+  String dir = "assets";
+
   Future<List<Content>> _loadQuestions() async {
-    List localFile = [];
-    localFile =
-        io.Directory(dir).listSync(); //use your folder name insted of resume.
     List<Content> localContents = [];
-    // Retrieve the questions (Processed in the background)
-    for (var name in localFile) {
-      if (name.path.contains(".txt")) {
-        await rootBundle.loadString(name.path).then((q) {
-          List localImages = [];
-          for (String i in LineSplitter().convert(q)) {
-            localImages.add(i);
-          }
-          String newStr = name.path.replaceAll(dir, "");
-          localContents
-              .add(Content(newStr.replaceAll(".txt", ""), localImages));
-        });
-      }
+    dynamic mapData;
+    try {
+      final data = await rootBundle.loadString("$dir/config.yaml");
+      mapData = loadYaml(data);
+    } on Exception {
+      return localContents;
     }
+
+    for (var m in mapData["modules"]) {
+      List localImages = [];
+      for (var image in m["slides"]) {
+            localImages.add("assets/$image");
+      }
+      localContents.add(Content(m["name"], localImages));
+    }
+
     return localContents;
   }
 
