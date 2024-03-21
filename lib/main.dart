@@ -1,22 +1,18 @@
-import 'package:async/async.dart';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:io' as io;
-import 'package:path_provider/path_provider.dart';
-import 'package:process_run/shell_run.dart';
-
 import "package:yaml/yaml.dart";
 
 class Content {
-  String FileName;
+  String fileName;
   List paths;
-  Content(this.FileName, this.paths);
+  Content(this.fileName, this.paths);
 }
 
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -24,12 +20,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyAppScreen(),
+      home: const MyAppScreen(),
     );
   }
 }
 
 class MyAppScreen extends StatefulWidget {
+  const MyAppScreen({super.key});
   @override
   State createState() {
     return MyAppScreenState();
@@ -79,13 +76,13 @@ class MyAppScreenState extends State {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Todos'),
+        title: const Text('Modules'),
       ),
       body: ListView.builder(
         itemCount: contents.length,
         itemBuilder: (context, index) {
           return ListTile(
-            title: Text(contents[index].FileName),
+            title: Text(contents[index].fileName),
             // When a user taps the ListTile, navigate to the DetailScreen.
             // Notice that you're not only creating a DetailScreen, you're
             // also passing the current todo through to it.
@@ -95,7 +92,7 @@ class MyAppScreenState extends State {
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        imageSwitcherState(content: contents[index]),
+                        ImageSwitcherState(content: contents[index]),
                   ),
                 );
               }
@@ -107,14 +104,14 @@ class MyAppScreenState extends State {
   }
 }
 
-class imageSwitcherState extends StatefulWidget {
+class ImageSwitcherState extends StatefulWidget {
   final Content content;
-  const imageSwitcherState({Key? key, required this.content}) : super(key: key);
+  const ImageSwitcherState({Key? key, required this.content}) : super(key: key);
   @override
-  _imageSwitcherStateState createState() => _imageSwitcherStateState();
+  ImageSwitcherStateState createState() => ImageSwitcherStateState();
 }
 
-class _imageSwitcherStateState extends State<imageSwitcherState> {
+class ImageSwitcherStateState extends State<ImageSwitcherState> {
   int index = 0;
   List<Widget> widgets = [];
 
@@ -135,16 +132,12 @@ class _imageSwitcherStateState extends State<imageSwitcherState> {
   Widget build(BuildContext context) => Scaffold(
         body: GestureDetector(
             child: AnimatedSwitcher(
-              duration: Duration(milliseconds: 1000),
-              reverseDuration: Duration(milliseconds: 2000),
+              duration: const Duration(milliseconds: 1000),
+              reverseDuration: const Duration(milliseconds: 2000),
               transitionBuilder: (child, animation) => ScaleTransition(
-                child: SizedBox.expand(child: child),
                 scale: animation,
+                child: SizedBox.expand(child: child),
               ),
-              // switchInCurve: Curves.bounceIn,
-              // switchOutCurve: Curves.bounceOut,
-              // switchInCurve: Curves.easeIn,
-              // switchOutCurve: Curves.easeOut,
               child: widgets[index],
             ),
             onLongPress: () {
