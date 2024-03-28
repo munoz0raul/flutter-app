@@ -103,7 +103,7 @@ class MyAppState extends State<MyApp> {
   static bool locked = false;
   static ContentList contents = ContentList();
   // Read env for assets location
-  static String dir = const String.fromEnvironment("ASSETS_DIR", defaultValue: "assets");
+  static String dir = const String.fromEnvironment("ASSETS_DIR", defaultValue: "/saved/assets");
 
   void loadModules() async {
     dynamic mapData;
