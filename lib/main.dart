@@ -40,28 +40,64 @@ class ContentList with ChangeNotifier {
   int slideIndex = 0;
   final List<Content> _contentList = [];
 
-  static const int _slideTimeout = 90;
-  late Timer _timer;
+  static const int _slideRotateTimeout = 10;
+  static const int _slidePauseTimeout = 120;
+  late Timer _timerSlideshowRotate;
+  late Timer _timerSlideshowPause;
 
   ContentList() {
-    _timer = Timer(const Duration(seconds: _slideTimeout), timerHandler);
-    _timer.cancel();
+    _timerSlideshowRotate = Timer(const Duration(seconds: _slideRotateTimeout), slideshowRotateHandler);
+    _timerSlideshowRotate.cancel();
+    _timerSlideshowPause = Timer(const Duration(seconds: _slidePauseTimeout), slideshowPauseHandler);
+    _timerSlideshowPause.cancel();
   }
 
-  void timerHandler() {
-    logger.d("** Slide Timer: TRIGGER **");
-    slideIndex = 0;
+  void slideshowRotateHandler() {
+    logger.d("** Slideshow Rotate Timer: TRIGGER **");
+    final isLastIndex = slideIndex == _contentList[moduleIndex].length() - 1;
+    slideIndex = isLastIndex ? 0 : slideIndex + 1;
+    logger.d("[tap] slide: module: ${_contentList[moduleIndex].title}, slide:$slideIndex");
+    startSlideshow();
     notify();
   }
 
-  void startTimer() {
-    _timer = Timer(const Duration(seconds: _slideTimeout), timerHandler);
+  void startSlideshow() {
+    _timerSlideshowRotate = Timer(const Duration(seconds: _slideRotateTimeout), slideshowRotateHandler);
   }
 
-  void cancelTimer() {
-    if (_timer.isActive) {
-      _timer.cancel();
+  bool isSlideshowActive() {
+    return _timerSlideshowRotate.isActive;
+  }
+
+  void stopSlideshow() {
+    if (_timerSlideshowRotate.isActive) {
+      _timerSlideshowRotate.cancel();
     }
+  }
+
+  void slideshowPauseHandler() {
+    logger.d("** Slideshow Pause Timer: TRIGGER **");
+    slideIndex = 0;
+    startSlideshow();
+    notify();
+  }
+
+  void pauseSlideshow() {
+    stopSlideshow();
+    if (_timerSlideshowPause.isActive) {
+      _timerSlideshowPause.cancel();
+    }
+    _timerSlideshowPause = Timer(const Duration(seconds: _slidePauseTimeout), slideshowPauseHandler);
+  }
+
+  void cancelSlideshowPause() {
+    if (_timerSlideshowPause.isActive) {
+      _timerSlideshowPause.cancel();
+    }
+  }
+
+  bool isSlideshowPaused() {
+    return _timerSlideshowPause.isActive;
   }
 
   operator [](int i) => _contentList[i];
@@ -70,7 +106,7 @@ class ContentList with ChangeNotifier {
     moduleIndex = lastModule;
     slideIndex = 0;
     _contentList.clear();
-    cancelTimer();
+    stopSlideshow();
   }
 
   void add(Content content) {
@@ -103,7 +139,7 @@ class MyAppState extends State<MyApp> {
   static bool locked = false;
   static ContentList contents = ContentList();
   // Read env for assets location
-  static String dir = const String.fromEnvironment("ASSETS_DIR", defaultValue: "/saved/assets");
+  static String dir = const String.fromEnvironment("ASSETS_DIR", defaultValue: "assets");
 
   void loadModules() async {
     dynamic mapData;
@@ -190,6 +226,7 @@ class MyAppState extends State<MyApp> {
                               ImageSwitcher(contents: contents),
                         ),
                       );
+                      contents.startSlideshow();
                     }
                   },
                 );
@@ -237,23 +274,25 @@ class ImageSwitcherState extends State<ImageSwitcher> {
                 onLongPress: () {
                   logger.d("[lpress] list");
                   Navigator.pop(context);
-                  widget.contents.cancelTimer();
+                  widget.contents.stopSlideshow();
+                  widget.contents.cancelSlideshowPause();
                 },
                 onDoubleTap: () {
+                  logger.d("[dtap] slide: module: ${widget.contents.activeModule().title}");
+                  widget.contents.pauseSlideshow();
                   setState(() {
                     widget.contents.slideIndex = 0;
-                    logger.d("[dtap] slide: module: ${widget.contents.activeModule().title}, slide:${widget.contents.slideIndex}");
                   });
                 },
                 onTap: () {
-                  setState(() {
-                    final isLastIndex = widget.contents.slideIndex == widget.contents.activeModule().length() - 1;
-                    widget.contents.slideIndex = isLastIndex ? 0 : widget.contents.slideIndex + 1;
-                    logger.d("[tap] slide: module: ${widget.contents.activeModule().title}, slide:${widget.contents.slideIndex}");
-                    if (widget.contents.slideIndex > 0) {
-                      widget.contents.startTimer();
-                    }
-                  });
+                  logger.d("[tap] slide: module: ${widget.contents.activeModule().title} paused: ${widget.contents.isSlideshowPaused()}");
+                  if (widget.contents.isSlideshowPaused()) {
+                    setState(() {
+                      final isLastIndex = widget.contents.slideIndex == widget.contents.activeModule().length() - 1;
+                      widget.contents.slideIndex = isLastIndex ? 0 : widget.contents.slideIndex + 1;
+                    });
+                  }
+                  widget.contents.pauseSlideshow();
                 },
               ),
             );
